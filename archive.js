@@ -14,7 +14,7 @@
   const btn = (text, label, action) => { const node = el('button', '', text); node.type = 'button'; if (label) node.setAttribute('aria-label', label); node.addEventListener('click', action); return node; };
   const searchable = new Map();
   function searchText(p) {
-    if(!searchable.has(p.id)) searchable.set(p.id,[p.name,p.tagline,p.group,p.role,p.summary,...p.life,...p.moves.flat(),...p.scenes.flatMap(([title,text,source,passage])=>[title,text,source,...(passage?.paragraphs||[])]),...p.poems.map(q=>q.text)].join(' ').toLowerCase());
+    if(!searchable.has(p.id)) searchable.set(p.id,[p.name,p.tagline,p.group,p.role,p.summary,p.personality||'',...p.life,...p.moves.flat(),...p.scenes.flatMap(([title,text,source,passage])=>[title,text,source,...(passage?.paragraphs||[])]),...p.poems.map(q=>q.text)].join(' ').toLowerCase());
     return searchable.get(p.id);
   }
   for (const name of [...new Set(records.map(p=>p.group))]) group.add(new Option(name,name));
@@ -104,7 +104,9 @@
       for(const scene of p.scenes)fragment.append(renderScene(scene));
       $('#panel-scenes').replaceChildren(fragment);
     } else if(name==='life') {
-      const life=$('#panel-life');life.replaceChildren(el('h3','','经历脉络'));
+      const life=$('#panel-life');life.replaceChildren();
+      if(p.personality)life.append(el('h3','','个性与选择'),el('p','personality-copy',p.personality));
+      life.append(el('h3','','经历脉络'));
       const timeline=el('ol','life-list');for(const text of p.life)timeline.append(el('li','',text));life.append(timeline);
       if(p.moves.length){life.append(el('h3','','经典杀招与能力'));const moves=el('ul','move-list');for(const [name,kind,text] of p.moves){const li=el('li');li.append(el('strong','',name),el('small','',kind),el('p','',text));moves.append(li);}life.append(moves);}
     } else renderPoem();
