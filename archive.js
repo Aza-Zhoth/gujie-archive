@@ -8,13 +8,14 @@
   const tabs = [...document.querySelectorAll('[data-tab]')];
   let current = '', activeTab = 'scenes', poem = 0, filtered = records;
   const renderedPanels = new Set();
+  const techniqueLinks=window.PROFILE_TECHNIQUES||{};
   let favorites = new Set();
   try { const saved = JSON.parse(localStorage.getItem('gujie-favorites') || '[]'); if (Array.isArray(saved)) favorites = new Set(saved.filter(id => byId.has(id))); } catch {}
   const el = (tag, className, text) => { const node = document.createElement(tag); if (className) node.className = className; if (text !== undefined) node.textContent = text; return node; };
   const btn = (text, label, action) => { const node = el('button', '', text); node.type = 'button'; if (label) node.setAttribute('aria-label', label); node.addEventListener('click', action); return node; };
   const searchable = new Map();
   function searchText(p) {
-    if(!searchable.has(p.id)) searchable.set(p.id,[p.name,p.tagline,p.group,p.role,p.summary,p.personality||'',...p.life,...p.moves.flat(),...p.scenes.flatMap(([title,text,source,passage])=>[title,text,source,...(passage?.paragraphs||[])]),...p.poems.map(q=>q.text)].join(' ').toLowerCase());
+    if(!searchable.has(p.id)) searchable.set(p.id,[p.name,p.tagline,p.group,p.role,p.summary,p.personality||'',...p.life,...p.moves.flat(),...(techniqueLinks[p.id]||[]).flatMap(t=>[t.name,t.path,t.description]),...p.scenes.flatMap(([title,text,source,passage])=>[title,text,source,...(passage?.paragraphs||[])]),...p.poems.map(q=>q.text)].join(' ').toLowerCase());
     return searchable.get(p.id);
   }
   for (const name of [...new Set(records.map(p=>p.group))]) group.add(new Option(name,name));
@@ -108,7 +109,19 @@
       if(p.personality)life.append(el('h3','','个性与选择'),el('p','personality-copy',p.personality));
       life.append(el('h3','','经历脉络'));
       const timeline=el('ol','life-list');for(const text of p.life)timeline.append(el('li','',text));life.append(timeline);
-      if(p.moves.length){life.append(el('h3','','经典杀招与能力'));const moves=el('ul','move-list');for(const [name,kind,text] of p.moves){const li=el('li');li.append(el('strong','',name),el('small','',kind),el('p','',text));moves.append(li);}life.append(moves);}
+      const related=techniqueLinks[p.id]||[];
+      const simpleName=s=>s.replace(/（.*?）/g,'').replace(/仙蛊$/,'蛊');
+      const linked=new Set();
+      if(p.moves.length){life.append(el('h3','','经典杀招与能力'));const moves=el('ul','move-list');for(const [name,kind,text] of p.moves){const li=el('li'),strong=el('strong');const found=related.find(t=>simpleName(t.name)===simpleName(name));if(found){const a=el('a','',name);a.href='techniques.html#entry='+found.id;strong.append(a);linked.add(found.id);}else strong.textContent=name;li.append(strong,el('small','',kind),el('p','',text));moves.append(li);}life.append(moves);}
+      if(related.length){
+        life.append(el('h3','additional-techniques-heading','关联蛊虫、杀招与秘境'));
+        const all=el('a','all-techniques-link','在大全中查看关联条目（'+related.length+'）');all.href='techniques.html#person='+p.id;life.append(all);
+        for(const kind of ['蛊虫','杀招','蛊屋','蛊阵与战阵','天地秘境']){
+          const rows=related.filter(t=>t.kind===kind&&!linked.has(t.id));if(!rows.length)continue;
+          const group=el('details','profile-technique-group');group.open=rows.length<=4;group.append(el('summary','',kind+' · '+rows.length+'条'));
+          const ul=el('ul','move-list');for(const t of rows){const li=el('li'),a=el('a','',t.name);a.href='techniques.html#entry='+t.id;const strong=el('strong');strong.append(a);li.append(strong,el('small','',[t.kind,t.path].filter(Boolean).join(' · ')));if(t.description)li.append(el('p','',t.description));else if(t.source)li.append(el('p','technique-source-link',t.source));ul.append(li);}group.append(ul);life.append(group);
+        }
+      }
     } else renderPoem();
     renderedPanels.add(name);
   }
