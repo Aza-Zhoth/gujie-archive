@@ -32,8 +32,8 @@
     if(controls.sort.value==='chapters')filtered.sort((a,b)=>b.chapters-a.chapters);
     page=Math.max(0,Math.min(page,Math.ceil(filtered.length/size)-1));renderList();
     for(const b of $('#catalogue-categories').children)b.setAttribute('aria-pressed',String(b.dataset.kind===kind));
-    if(filtered.length&&!filtered.some(e=>e.id===current))open(filtered[0].id,false,false);
-    if(!filtered.length){const h=el('h2','','暂无匹配条目');h.id='technique-name';detail.replaceChildren(h,el('p','technique-missing','试试放宽品阶、流派或人物条件。'));current='';}
+    if(filtered.length){if(!filtered.some(e=>e.id===current))open(filtered[0].id,false,false);else renderDetailPager();}
+    if(!filtered.length){const h=el('h2','','暂无匹配条目');h.id='technique-name';detail.replaceChildren(h,el('p','technique-missing','试试放宽品阶、流派或人物条件。'));current='';document.title='蛊虫与杀招大全 · 蛊界档案馆';}
   }
   function renderList(){
     const fragment=document.createDocumentFragment();for(const e of filtered.slice(page*size,(page+1)*size)){
@@ -44,7 +44,9 @@
     }list.replaceChildren(fragment);$('#catalogue-count').textContent=number(filtered.length)+' / '+number(entries.length)+'条';$('#catalogue-empty').hidden=!!filtered.length;
     $('#catalogue-page').textContent=filtered.length?`${page*size+1}–${Math.min((page+1)*size,filtered.length)}`:'0';$('#catalogue-previous').disabled=page===0;$('#catalogue-next').disabled=(page+1)*size>=filtered.length;
   }
-  function open(id,scroll=false,push=false){const e=byId.get(id);if(!e)return;current=id;detail.replaceChildren();
+  function open(id,scroll=false,push=false){const e=byId.get(id);if(!e)return;current=id;
+    if(scroll){const index=filtered.findIndex(x=>x.id===id),targetPage=index<0?page:Math.floor(index/size);if(targetPage!==page){page=targetPage;renderList();list.scrollTop=0;}}
+    detail.replaceChildren();
     const back=button('← 返回检索结果',()=>{const heading=$('#catalogue-title');heading.tabIndex=-1;heading.scrollIntoView({behavior:'auto',block:'start'});heading.focus({preventScroll:true});});back.className='technique-back';detail.append(back);
     detail.append(el('p','technique-meta',[data.categories[e.kind],e.path,e.ranks.length?'品阶记载：'+e.ranks.join('、'):'',number(e.chapters)+'章出现'].filter(Boolean).join(' · ')),el('h2','',e.name));
     detail.querySelector('h2').id='technique-name';detail.setAttribute('aria-labelledby','technique-name');
@@ -55,13 +57,20 @@
     detail.append(el('h3','','原著摘录'));
     e.references.forEach((r,index)=>{const wrap=el(index?'details':'section','technique-reference'),label=`第${'一二三四五六'[r.volume-1]}卷 · ${r.chapter}`;wrap.append(el(index?'summary':'p','',label));const quote=el('blockquote');quote.setAttribute('aria-label',e.name+'原文片段');for(const p of r.paragraphs)quote.append(el('p','',p));wrap.append(quote);detail.append(wrap);});
     const context=e.references.flatMap(r=>r.paragraphs).join('');const related=entries.filter(x=>x.id!==e.id&&x.name.length>2&&context.includes(x.name)).slice(0,9);
-    if(related.length){detail.append(el('h3','','同段出现'));const nav=el('nav','technique-related-links');for(const r of related){const a=el('a','',r.name+' · '+data.categories[r.kind]);const params=new URLSearchParams({entry:r.id});a.href='#'+params;a.addEventListener('click',event=>{event.preventDefault();clear(false);current=r.id;filter();open(r.id,true,true);});nav.append(a);}detail.append(nav);}
-    const i=filtered.findIndex(x=>x.id===id),pager=el('nav','technique-detail-pager');pager.setAttribute('aria-label','切换条目');const prev=button(i>0?'← '+filtered[i-1].name:'← 上一条',()=>open(filtered[i-1].id,true,true));prev.disabled=i<=0;const next=button(i>=0&&i<filtered.length-1?filtered[i+1].name+' →':'下一条 →',()=>open(filtered[i+1].id,true,true));next.disabled=i<0||i>=filtered.length-1;pager.append(prev,next);detail.append(pager);
+    if(related.length){detail.append(el('h3','','同段出现'));const nav=el('nav','technique-related-links');for(const r of related){const a=el('a','',r.name+' · '+data.categories[r.kind]);const params=new URLSearchParams({entry:r.id});a.href='#'+params;a.addEventListener('click',event=>{if(event.button!==0||event.metaKey||event.ctrlKey||event.shiftKey||event.altKey)return;event.preventDefault();clear(false);current=r.id;filter();open(r.id,true,true);});nav.append(a);}detail.append(nav);}
+    renderDetailPager();
     for(const b of list.querySelectorAll('[data-entry]'))b.setAttribute('aria-current',String(b.dataset.entry===id));document.title=e.name+' · 蛊虫与杀招大全';save(push);
     if(scroll){detail.scrollIntoView({behavior:'auto',block:'start'});detail.focus({preventScroll:true});}
   }
+  function renderDetailPager(){
+    const i=filtered.findIndex(x=>x.id===current),before=i>0?filtered[i-1]:null,after=i>=0?filtered[i+1]:null;
+    const pager=el('nav','technique-detail-pager');pager.setAttribute('aria-label','切换条目');
+    const prev=button(before?'← '+before.name:'← 上一条',()=>{if(before)open(before.id,true,true);});prev.disabled=!before;
+    const next=button(after?after.name+' →':'下一条 →',()=>{if(after)open(after.id,true,true);});next.disabled=!after;
+    pager.append(prev,next);const old=detail.querySelector('.technique-detail-pager');if(old)old.replaceWith(pager);else detail.append(pager);
+  }
   function clear(update=true){for(const [key,c] of Object.entries(controls))c.value=key==='sort'?'featured':'';kind='';page=0;if(update){filter();save();controls.q.focus();}}
-  function restore(){const params=new URLSearchParams(location.hash.slice(1));for(const [key,c] of Object.entries(controls))c.value=params.get(key)||(key==='sort'?'featured':'');kind=data.categories[params.get('kind')]?params.get('kind'):'';page=Math.max(0,(Number(params.get('page'))||1)-1);current=byId.has(params.get('entry'))?params.get('entry'):'';filter();if(current)open(current);}
+  function restore(){const params=new URLSearchParams(location.hash.slice(1));for(const [key,c] of Object.entries(controls)){const fallback=key==='sort'?'featured':'',value=params.get(key)||fallback;c.value=c.tagName==='SELECT'&&!Array.from(c.options).some(o=>o.value===value)?fallback:value;}kind=data.categories[params.get('kind')]?params.get('kind'):'';const requestedPage=Number(params.get('page'));page=Number.isFinite(requestedPage)?Math.max(0,Math.floor(requestedPage||1)-1):0;current=byId.has(params.get('entry'))?params.get('entry'):'';filter();if(current)open(current);}
   let searchTimer;controls.q.addEventListener('input',()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{page=0;filter();save();},100);});for(const [key,c] of Object.entries(controls))if(key!=='q')c.addEventListener('change',()=>{page=0;filter();save();});
   const restoreRoute=()=>{if(!['#top','#catalogue-search'].includes(location.hash))restore();};
   $('#catalogue-reset').addEventListener('click',()=>clear());$('#catalogue-previous').addEventListener('click',()=>{page--;renderList();list.scrollTop=0;save();});$('#catalogue-next').addEventListener('click',()=>{page++;renderList();list.scrollTop=0;save();});window.addEventListener('hashchange',restoreRoute);window.addEventListener('popstate',restoreRoute);restore();

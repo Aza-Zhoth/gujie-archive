@@ -5,7 +5,7 @@
   <meta name="theme-color" content="#eee6f3"><meta name="description" content="蛊真人蛊虫、杀招、蛊屋、战阵与天地秘境的原文检索目录。">
   <title>蛊虫与杀招大全 · 蛊界档案馆</title>
   <link rel="stylesheet" href="archive.css?v=5af649e0a53e"><link rel="stylesheet" href="techniques.css?v=1e93dc030213">
-  <script src="navigation.js?v=2c65583fb56c" defer></script><script src="techniques-data.js?v=551bff2fccfa" defer></script><script src="techniques.js?v=8b5a2fbfc2c7" defer></script>
+  <script src="navigation.js?v=2c65583fb56c" defer></script><script src="techniques-data.js?v=551bff2fccfa" defer></script><script src="techniques.js?v=6b3187dde2d5" defer></script>
 </head>
 <body>
   <a class="skip" href="#catalogue-search">跳到条目检索</a>
@@ -13,12 +13,12 @@
   <main class="frame technique-main" id="top">
     <header class="technique-heading"><div><h1>蛊虫与杀招大全</h1><p>从一只月光蛊，到尊者交锋时的底牌。</p></div><a href="index.html#index">按人物阅读 →</a></header>
     <section aria-label="条目检索" class="technique-tools">
-      <label class="technique-search"><span>搜索名称、用途、原文或人物</span><input type="search" id="catalogue-search" placeholder="试试：春秋蝉、楚度、逆流河…" autocomplete="off"></label>
+      <label class="technique-search" for="catalogue-search"><span>搜索名称、用途、原文或人物</span><input type="search" id="catalogue-search" name="q" placeholder="试试：春秋蝉、楚度、逆流河…" autocomplete="off"></label>
       <details class="technique-filters" id="catalogue-filters" open><summary>流派、品阶与人物筛选</summary><div class="technique-selects">
-        <label><span>流派</span><select id="catalogue-path"><option value="">全部流派</option></select></label>
-        <label><span>品阶记载</span><select id="catalogue-rank"><option value="">全部品阶</option></select></label>
-        <label><span>关联人物</span><select id="catalogue-person"><option value="">全部人物</option></select></label>
-        <label><span>排序</span><select id="catalogue-sort"><option value="featured">重点条目在前</option><option value="name">按名称排序</option><option value="appearance">按原文出场顺序</option><option value="chapters">按出现章数</option></select></label>
+        <label for="catalogue-path"><span>流派</span><select id="catalogue-path" name="path"><option value="">全部流派</option></select></label>
+        <label for="catalogue-rank"><span>品阶记载</span><select id="catalogue-rank" name="rank"><option value="">全部品阶</option></select></label>
+        <label for="catalogue-person"><span>关联人物</span><select id="catalogue-person" name="person"><option value="">全部人物</option></select></label>
+        <label for="catalogue-sort"><span>排序</span><select id="catalogue-sort" name="sort"><option value="featured">重点条目在前</option><option value="name">按名称排序</option><option value="appearance">按原文出场顺序</option><option value="chapters">按出现章数</option></select></label>
       </div></details>
     </section>
     <nav class="technique-categories" aria-label="条目分类" id="catalogue-categories"></nav>
