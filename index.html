@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#eee6f3">
+  <meta name="description" content="蛊真人的人物档案、经典杀招、诗句与名场面。">
+  <title>蛊界档案馆 · 人物</title>
+  <link rel="stylesheet" href="archive.css?v=1f0ca8227aa7">
+  <script src="navigation.js?v=70f8c184e1c8" defer></script><script src="archive-data.js?v=fdc7446753f5" defer></script>
+  <script src="archive.js?v=caee4e6f000a" defer></script>
+</head>
+<body>
+  <a class="skip" href="#index">跳到人物索引</a>
+  <header class="site-header frame"><a class="brand" href="index.html">蛊界档案馆</a><nav aria-label="主导航"><a href="#index" aria-current="page">人物档案</a><a href="story.html">剧情精读</a><a href="columns.html">人物专栏</a><a href="renzu.html">人祖传</a></nav></header>
+  <main id="top" class="frame">
+    <header class="archive-cover"><div><h1>群像入卷</h1><p>人物经历、经典杀招与名场面。</p><a href="#index">翻阅人物档案</a></div><img src="assets/mandate-scroll.webp" alt="群山与长河之间展开的卷轴" width="1536" height="1024" fetchpriority="low" decoding="async"></header>
+    <section id="index" class="archive-workspace" aria-label="人物档案馆">
+      <aside class="catalog" aria-labelledby="catalog-title">
+        <div class="catalog-heading"><h2 id="catalog-title">人物索引</h2><span id="result-count" role="status"></span></div>
+        <div class="catalog-tools"><label class="search-wrap"><span class="sr-only">搜索人物、杀招或名场面</span><input id="search" type="search" placeholder="人物、杀招、名场面…" autocomplete="off"><kbd aria-hidden="true">/</kbd></label><label><span class="sr-only">按故事脉络筛选</span><select id="group"><option value="">全部人物</option></select></label></div>
+        <ul id="character-list" class="character-list" aria-label="人物列表"></ul>
+        <div id="empty-results" class="empty-state" hidden><p>没有找到相关人物。</p><button type="button" id="reset-search">清除筛选</button></div>
+      </aside>
+      <article id="reader" class="record" aria-labelledby="record-name" tabindex="-1">
+        <div class="record-heading"><div><p id="record-group" class="record-group"></p><h2 id="record-name"></h2><p id="record-tagline" class="record-tagline"></p></div><button type="button" id="bookmark" class="bookmark" aria-pressed="false">收藏</button></div>
+        <p id="record-role" class="record-role"></p><p id="record-summary" class="record-summary"></p><p id="record-feature" class="record-feature" hidden><a id="record-feature-link"></a></p><nav id="record-reading-links" class="record-reading-links" aria-label="人物分卷精读" hidden></nav>
+        <div class="record-tabs" role="tablist" aria-label="人物档案内容"><button id="tab-scenes" type="button" role="tab" aria-selected="true" aria-controls="panel-scenes" data-tab="scenes">名场面</button><button id="tab-life" type="button" role="tab" aria-selected="false" aria-controls="panel-life" tabindex="-1" data-tab="life">经历与能力</button><button id="tab-poems" type="button" role="tab" aria-selected="false" aria-controls="panel-poems" tabindex="-1" data-tab="poems">诗句与语录</button></div>
+        <section id="panel-scenes" class="record-panel" role="tabpanel" aria-labelledby="tab-scenes" tabindex="0"></section><section id="panel-life" class="record-panel" role="tabpanel" aria-labelledby="tab-life" tabindex="0" hidden></section><section id="panel-poems" class="record-panel" role="tabpanel" aria-labelledby="tab-poems" tabindex="0" hidden></section>
+        <nav class="character-pager" aria-label="切换人物"><button type="button" id="previous-person">← 上一位</button><a href="#index">返回索引</a><button type="button" id="next-person">下一位 →</button></nav>
+      </article>
+    </section>
+  </main>
+  <footer class="site-footer frame"><span>蛊界档案馆</span><nav aria-label="页尾导航"><a href="renzu.html">人祖传</a><a href="#top">回到页首 ↑</a></nav></footer>
+  <noscript><p class="frame">请启用 JavaScript 以搜索和阅读人物档案。<a href="renzu.html">阅读人祖传</a></p></noscript>
+</body>
+</html>
