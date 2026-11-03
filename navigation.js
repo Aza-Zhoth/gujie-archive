@@ -15,7 +15,7 @@
     if (url.origin !== location.origin) return null;
     if (!url.pathname.startsWith(siteBase)) return null;
     const sitePath = '/' + url.pathname.slice(siteBase.length);
-    if (!/^\/(?:index\.html|techniques(?:\.html)?|story(?:-map)?(?:\.html)?|columns(?:\.html|\/)?|columns\/(?:index\.html|(?:wushuai|xingxiu|honglian|fengjiuge|taozhu|longgong|wuji|wuyong|taibai)(?:\.html)?)|wushuai(?:\.html)?|renzu(?:\.html)?|stories\/[a-z-]+(?:\.html)?|volumes\/volume-[1-6](?:\.html)?)?$/.test(sitePath)) return null;
+    if (!/^\/(?:index\.html|(?:search|scenes|techniques)(?:\.html)?|story(?:-map)?(?:\.html)?|columns(?:\.html|\/)?|columns\/(?:index\.html|(?:wushuai|xingxiu|honglian|fengjiuge|taozhu|longgong|wuji|wuyong|taibai)(?:\.html)?)|wushuai(?:\.html)?|renzu(?:\.html)?|stories\/[a-z-]+(?:\.html)?|volumes\/volume-[1-6](?:\.html)?)?$/.test(sitePath)) return null;
     if (cleanRoutes) {
       if (url.pathname === '/columns.html' || url.pathname === '/columns') url.pathname = '/columns/';
       else if (url.pathname.endsWith('/index.html')) url.pathname = url.pathname.slice(0, -10);

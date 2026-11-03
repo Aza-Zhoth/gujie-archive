@@ -6,7 +6,7 @@
   const list = $('#character-list'), search = $('#search'), group = $('#group');
   const reader = $('#reader');
   const tabs = [...document.querySelectorAll('[data-tab]')];
-  let current = '', activeTab = 'scenes', poem = 0, filtered = records;
+  let current = '', activeTab = 'scenes', poem = 0, sceneIndex = -1, filtered = records;
   const renderedPanels = new Set();
   const techniqueLinks=window.PROFILE_TECHNIQUES||{};
   let favorites = new Set();
@@ -51,6 +51,7 @@
     const params = new URLSearchParams();
     if(activeTab!=='scenes') params.set('tab',activeTab);
     if(activeTab==='poems') params.set('poem',String(poem+1));
+    if(activeTab==='scenes'&&sceneIndex>=0)params.set('scene',String(sceneIndex+1));
     const next = '#'+current+(params.size?'?'+params:'');
     if(location.hash !== next) history[push?'pushState':'replaceState'](null,'',next);
   }
@@ -86,6 +87,7 @@
     $('#panel-poems .quote-kind').textContent = q.kind+(q.title?' · '+q.title:'');
     $('#panel-poems .poem-pager span').textContent = `${poem+1} / ${poems.length}`;
     saveUrl();
+    rememberReading();
   }
   function setTab(name, update=true) {
     activeTab = tabs.some(t=>t.dataset.tab===name) ? name : 'scenes';
@@ -95,14 +97,14 @@
       tab.setAttribute('aria-selected',String(selected)); tab.tabIndex=selected?0:-1;
       $('#'+tab.getAttribute('aria-controls')).hidden = !selected;
     }
-    if(update) saveUrl();
+    if(update){sceneIndex=-1;saveUrl();rememberReading();}
   }
   function ensurePanel(name) {
     if(renderedPanels.has(name)) return;
     const p=byId.get(current);
     if(name==='scenes') {
       const fragment=document.createDocumentFragment();
-      for(const scene of p.scenes)fragment.append(renderScene(scene));
+      for(const [i,scene] of p.scenes.entries()){const article=renderScene(scene);article.id='scene-'+p.id+'-'+(i+1);const reading=window.SCENE_READINGS?.[article.id];if(reading){const a=el('a','scene-reading-link',reading.label+' →');a.href=reading.href;article.append(a);}fragment.append(article);}
       $('#panel-scenes').replaceChildren(fragment);
     } else if(name==='life') {
       const life=$('#panel-life');life.replaceChildren();
@@ -151,13 +153,14 @@
     const requestedTab=tabs.some(t=>t.dataset.tab===tab)?tab:'scenes';
     const requestedPoem=Math.min(Math.max(0,poemIndex),Math.max(0,p.poems.length-1));
     if(p.id===current) {
+      if(update)sceneIndex=-1;
       if(poem!==requestedPoem){poem=requestedPoem;renderedPanels.delete('poems');}
       if(activeTab!==requestedTab||!renderedPanels.has(requestedTab))setTab(requestedTab,false);
       if(update)saveUrl(true);
-      if(scroll){reader.scrollIntoView({behavior:'auto',block:'start'});reader.focus({preventScroll:true});}
+      if(scroll){reader.scrollIntoView({behavior:'auto',block:'start'});reader.focus({preventScroll:true});rememberReading();}
       return;
     }
-    current=p.id;poem=requestedPoem;renderedPanels.clear();
+    current=p.id;poem=requestedPoem;sceneIndex=-1;renderedPanels.clear();
     for(const name of ['scenes','life','poems'])$('#panel-'+name).replaceChildren();
     reader.style.setProperty('--start',p.colors[0]); reader.style.setProperty('--end',p.colors[1]);
     $('#record-name').textContent=p.name; $('#record-tagline').textContent=p.tagline;
@@ -177,6 +180,15 @@
     list.querySelector(`[data-person="${current}"]`)?.setAttribute('aria-current','true');
     updatePager();if(update)saveUrl(true);
     if(scroll){reader.scrollIntoView({behavior:'auto',block:'start'});reader.focus({preventScroll:true});}
+    if(scroll)rememberReading();
+  }
+  function rememberReading(){
+    const p=byId.get(current);if(!p)return;
+    const params=new URLSearchParams();let label='名场面';
+    if(activeTab==='life'){params.set('tab','life');label='经历与能力';}
+    if(activeTab==='poems'){params.set('tab','poems');params.set('poem',poem+1);label=p.poems[poem]?.title||'诗句与语录';}
+    if(activeTab==='scenes'&&sceneIndex>=0){params.set('scene',sceneIndex+1);label=p.scenes[sceneIndex][0];}
+    window.ArchiveReading?.remember({href:'index.html#'+current+(params.size?'?'+params:''),title:p.name,label});
   }
   function restore() {
     const [id,query='']=location.hash.slice(1).split('?');
@@ -185,6 +197,12 @@
     const index=Number.isInteger(requested)&&requested>0?requested-1:0;
     const tab=params.get('tab')||(params.has('poem')?'poems':'scenes');
     open(id,false,tab,index,false);
+    const scene=Number(params.get('scene'));
+    if(activeTab==='scenes'&&Number.isInteger(scene)&&scene>0&&scene<=byId.get(id).scenes.length){
+      sceneIndex=scene-1;const target=document.getElementById('scene-'+id+'-'+scene);target.tabIndex=-1;
+      requestAnimationFrame(()=>{target.scrollIntoView({block:'start'});target.focus({preventScroll:true});});
+    }else{sceneIndex=-1;requestAnimationFrame(()=>{reader.scrollIntoView({block:'start'});reader.focus({preventScroll:true});});}
+    rememberReading();
     return true;
   }
   search.addEventListener('input',renderList);group.addEventListener('change',renderList);
@@ -194,5 +212,14 @@
   for(const [selector,delta]of[['#previous-person',-1],['#next-person',1]])$(selector).addEventListener('click',()=>{const i=filtered.findIndex(p=>p.id===current);const next=filtered[i+delta];if(i>=0&&next)open(next.id,true);});
   document.addEventListener('keydown',event=>{if(event.key==='/'&&!event.ctrlKey&&!event.metaKey&&!event.altKey&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)&&!document.activeElement.isContentEditable){event.preventDefault();search.focus();}});
   window.addEventListener('hashchange',restore);window.addEventListener('popstate',restore);
+  $('#panel-scenes').addEventListener('click',event=>{const scene=event.target.closest('.scene');if(!scene)return;sceneIndex=[...$('#panel-scenes').children].indexOf(scene);saveUrl();rememberReading();});
+  let progressTimer,positionTouched=false;
+  function rememberPosition(){
+    if(!positionTouched||!current||reader.getBoundingClientRect().top>innerHeight||reader.getBoundingClientRect().bottom<0)return;
+    if(activeTab==='scenes'){const scenes=[...$('#panel-scenes').children];let index=-1;for(let i=0;i<scenes.length;i++){if(scenes[i].getBoundingClientRect().top<=150)index=i;else break;}sceneIndex=index;}
+    rememberReading();
+  }
+  window.addEventListener('scroll',()=>{positionTouched=true;clearTimeout(progressTimer);progressTimer=setTimeout(rememberPosition,350);},{passive:true});
+  window.addEventListener('pagehide',()=>{clearTimeout(progressTimer);rememberPosition();});
   renderList();if(!restore())open('fangyuan',false,'scenes',0,false);
 })();
