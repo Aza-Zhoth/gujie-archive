@@ -5,6 +5,7 @@
   const $ = selector => document.querySelector(selector);
   const list = $('#character-list'), search = $('#search'), group = $('#group');
   const reader = $('#reader');
+  const archiveTitle = document.title;
   const tabs = [...document.querySelectorAll('[data-tab]')];
   let current = '', activeTab = 'scenes', poem = 0, sceneIndex = -1, filtered = records;
   const renderedPanels = new Set();
@@ -54,6 +55,7 @@
     if(activeTab==='scenes'&&sceneIndex>=0)params.set('scene',String(sceneIndex+1));
     const next = '#'+current+(params.size?'?'+params:'');
     if(location.hash !== next) history[push?'pushState':'replaceState'](null,'',next);
+    document.title=byId.get(current).name+' · 蛊界档案馆';
   }
   function updateBookmark() {
     const saved = favorites.has(current);
@@ -104,7 +106,17 @@
     const p=byId.get(current);
     if(name==='scenes') {
       const fragment=document.createDocumentFragment();
-      for(const [i,scene] of p.scenes.entries()){const article=renderScene(scene);article.id='scene-'+p.id+'-'+(i+1);const reading=window.SCENE_READINGS?.[article.id];if(reading){const a=el('a','scene-reading-link',reading.label+' →');a.href=reading.href;article.append(a);}fragment.append(article);}
+      for(const [i,scene] of p.scenes.entries()){
+        const article=renderScene(scene);
+        article.id='scene-'+p.id+'-'+(i+1);
+        const reading=window.SCENE_READINGS?.[article.id];
+        if(reading){
+          const link=el('a','scene-reading-link',reading.label+' →');
+          link.href=reading.href;
+          article.append(link);
+        }
+        fragment.append(article);
+      }
       $('#panel-scenes').replaceChildren(fragment);
     } else if(name==='life') {
       const life=$('#panel-life');life.replaceChildren();
@@ -174,7 +186,6 @@
     let readingTarget=readings;
     if(readingLinks.length>1){const group=el('details');group.append(el('summary','',`按卷阅读人物分析（${readingLinks.length}）`));readingTarget=el('div','record-reading-list');group.append(readingTarget);readings.append(group);}
     for(const item of readingLinks){const link=el('a','',item.label);link.href=item.href;readingTarget.append(link);}
-    document.title=p.name+' · 蛊界档案馆';
     setTab(requestedTab,false);updateBookmark();
     list.querySelector('[aria-current="true"]')?.setAttribute('aria-current','false');
     list.querySelector(`[data-person="${current}"]`)?.setAttribute('aria-current','true');
@@ -192,7 +203,8 @@
   }
   function restore() {
     const [id,query='']=location.hash.slice(1).split('?');
-    if(!byId.has(id))return false;
+    if(!byId.has(id)){document.title=archiveTitle;return false;}
+    document.title=byId.get(id).name+' · 蛊界档案馆';
     const params=new URLSearchParams(query), requested=Number(params.get('poem'));
     const index=Number.isInteger(requested)&&requested>0?requested-1:0;
     const tab=params.get('tab')||(params.has('poem')?'poems':'scenes');

@@ -28,7 +28,7 @@
   try{
     const back=JSON.parse(sessionStorage.getItem(resultKey)||'null'),from=back&&internal(back.from);
     if(from&&/^\/(?:search|scenes)(?:\.html)?$/.test('/'+from.pathname.slice(base.pathname.length))&&identity(back.target)===identity(location.href)){
-      const host=document.querySelector('#reader,#chapter-reader,.story-body,#catalogue-detail');
+      const host=document.querySelector('#reader,#chapter-reader,.story-body,.event-body,#catalogue-detail');
       if(host){const nav=document.createElement('nav');nav.className='result-return';nav.setAttribute('aria-label','返回查找结果');const a=document.createElement('a');a.href=from.href;a.textContent=back.label==='返回名场面'?'← 返回名场面':'← 返回搜索结果';nav.append(a);if(typeof back.query==='string'&&back.query){const note=document.createElement('span');note.textContent='“'+back.query.slice(0,40)+'”';nav.append(note);}host.prepend(nav);if(host.id==='catalogue-detail'){new MutationObserver(()=>{if(!host.querySelector(':scope > .result-return'))host.prepend(nav);}).observe(host,{childList:true});}}
     }
   }catch{}
