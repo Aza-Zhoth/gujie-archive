@@ -3,13 +3,13 @@
   const mode=document.body.dataset.discovery, data=mode==='search'?window.ARCHIVE_SEARCH:window.ARCHIVE_SCENES;
   const $=s=>document.querySelector(s), query=$('#discovery-query'), list=$('#discovery-results');
   if(!data){$('#discovery-count').textContent='资料未载入，请刷新页面重试。';return;}
-  const names=new Map(data.people.map(p=>[p.id,p.name])), fields={q:query,kind:$('#discovery-kind'),person:$('#discovery-person'),volume:$('#discovery-volume'),original:$('#discovery-original')};
+  const names=new Map(data.people.map(p=>[p.id,p.name])), fields={q:query,kind:$('#discovery-kind'),person:$('#discovery-person'),volume:$('#discovery-volume'),order:$('#discovery-order'),original:$('#discovery-original')};
   let page=1,filtered=[],timer;const size=24;
   const el=(tag,cls,text)=>{const n=document.createElement(tag);if(cls)n.className=cls;if(text!==undefined)n.textContent=text;return n;};
   const normalized=s=>s.normalize('NFKC').toLowerCase();
   function folded(text){let value='',offset=0;const positions=[];for(const char of text){const part=normalized(char);for(let i=0;i<part.length;i++)positions.push({start:offset,end:offset+char.length});value+=part;offset+=char.length;}return {value,positions};}
   // This index only loads on the discovery pages, never in the character reader.
-  const indexed=data.entries.map(e=>({e,title:normalized(e.title),aliases:(e.aliases||[]).map(normalized),text:normalized([e.displayTitle,e.text,e.searchText,...(e.parts||[]).map(p=>p.text),...e.people.map(p=>names.get(p)||'')].join(' '))}));
+  const indexed=data.entries.map(e=>({e,title:normalized(e.title),aliases:(e.aliases||[]).map(normalized),text:normalized([e.displayTitle,e.text,e.searchText,e.source,e.chapterLabel,...(e.parts||[]).map(p=>p.text),...e.people.map(p=>names.get(p)||'')].join(' '))}));
   const groupedHits=new Map(data.entries.flatMap(e=>(e.perspectives||[]).map(p=>['hit-'+p.id,'hit-'+e.id])));
   const kindOptions=fields.kind?[...fields.kind.options].map(o=>{o.value=o.value;return {node:o,label:o.textContent};}):[];
   function tokens(){return normalized(query.value.trim()).split(/\s+/).filter(Boolean);}
@@ -32,11 +32,14 @@
   function snippet(text,terms){const {value,positions}=folded(text);const matches=terms.map(t=>value.indexOf(t)).filter(i=>i>=0);const start=matches.length?Math.max(0,positions[Math.min(...matches)].start-32):0;return (start?'…':'')+text.slice(start,start+150)+(start+150<text.length?'…':'');}
   function render(scroll=false,targetId=''){
     const terms=tokens(), phrase=terms.join(' '), kind=fields.kind?.value,person=fields.person?.value,volume=fields.volume?.value;
-    const matches=indexed.filter(({e,title,aliases,text})=>(!person||e.people.includes(person))&&(!volume||(volume==='unknown'?!e.volumes.length:e.volumes.includes(Number(volume))))&&(!fields.original?.checked||e.hasOriginal)&&terms.every(t=>title.includes(t)||aliases.some(a=>a.includes(t))||text.includes(t)));
+    const matches=indexed.filter(({e,title,aliases,text})=>(!person||e.people.includes(person))&&(!volume||e.volumes.includes(Number(volume)))&&(!fields.original?.checked||e.hasOriginal)&&terms.every(t=>title.includes(t)||aliases.some(a=>a.includes(t))||text.includes(t)));
     filtered=matches.filter(({e})=>!kind||e.kind===kind);
     for(const {node,label}of kindOptions){const n=node.value?matches.filter(({e})=>e.kind===node.value).length:matches.length;node.textContent=label+'（'+n+'）';}
     const rank=({title,aliases})=>!terms.length?0:title===phrase?0:aliases.includes(phrase)?1:terms.every(t=>title.includes(t))?2:3;
-    filtered.sort((a,b)=>rank(a)-rank(b));
+    if(fields.order?.value==='chapter'){
+      const order=e=>e.chapterOrders[volume||e.volumes[0]];
+      filtered.sort((a,b)=>order(a.e)-order(b.e));
+    }else filtered.sort((a,b)=>rank(a)-rank(b));
     const active=mode==='scenes'||terms.length||kind||person;
     if(!active)filtered=[];
     if(targetId){
@@ -46,7 +49,7 @@
     page=Math.min(Math.max(1,page),Math.max(1,Math.ceil(filtered.length/size)));
     const fragment=document.createDocumentFragment();
     for(const {e} of filtered.slice((page-1)*size,page*size)){
-      const li=el('li','discovery-result'),meta=el('p','discovery-meta',[e.kind,...e.people.slice(0,3).map(p=>names.get(p)),e.people.length>3?'等'+e.people.length+'人':'',e.source||''].filter(Boolean).join(' · '));li.id='hit-'+e.id;
+      const li=el('li','discovery-result'),meta=el('p','discovery-meta',[e.kind,...e.people.slice(0,3).map(p=>names.get(p)),e.people.length>3?'等'+e.people.length+'人':'',e.chapterLabel?'':e.source].filter(Boolean).join(' · '));li.id='hit-'+e.id;
       const h=el('h2');
       const exactTitle=phrase===normalized(e.title)||phrase===normalized(e.displayTitle||e.title);
       const part=exactTitle?undefined:matchedPart(e,terms);
@@ -55,6 +58,11 @@
       highlighted(title,e.displayTitle||e.title,terms);
       const excerpt=part?.text||(exactTitle&&e.overview)||e.summary||e.parts?.[0]?.text||e.text;
       const p=el('p','discovery-excerpt');highlighted(p,snippet(excerpt,terms),terms);li.append(meta,h,p);
+      if(e.chapterLabel){
+        const citation=el('p','discovery-chapters');
+        highlighted(citation,e.chapterLabel,terms);
+        li.append(citation);
+      }
       if(e.perspectives||e.reading){
         const links=el('nav','discovery-reading-links');
         links.setAttribute('aria-label',e.perspectives?'人物视角与延伸阅读':'延伸阅读');

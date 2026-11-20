@@ -28,12 +28,14 @@
     const fragment = document.createDocumentFragment();
     for (const p of filtered) {
       const li = el('li');
-      const button = btn('', '阅读'+p.name+'的档案', () => open(p.id, true));
-      button.dataset.person = p.id;
-      button.setAttribute('aria-current', String(p.id === current));
-      button.classList.toggle('saved', favorites.has(p.id));
-      button.append(el('span','person-name',p.name), el('span','person-group',p.group), el('span','person-tagline',p.tagline));
-      li.append(button); fragment.append(li);
+      const link = el('a','person-link');
+      link.href = '#'+p.id;
+      link.dataset.person = p.id;
+      link.setAttribute('aria-label','阅读'+p.name+'的档案');
+      link.setAttribute('aria-current', String(p.id === current));
+      link.classList.toggle('saved', favorites.has(p.id));
+      link.append(el('span','person-name',p.name), el('span','person-group',p.group), el('span','person-tagline',p.tagline));
+      li.append(link); fragment.append(li);
     }
     list.replaceChildren(fragment);
     list.scrollTop = oldScroll;
@@ -217,6 +219,12 @@
     rememberReading();
     return true;
   }
+  list.addEventListener('click',event=>{
+    const link=event.target.closest('a[data-person]');
+    if(!link||event.button!==0||event.ctrlKey||event.metaKey||event.shiftKey||event.altKey)return;
+    event.preventDefault();
+    open(link.dataset.person,true);
+  });
   search.addEventListener('input',renderList);group.addEventListener('change',renderList);
   $('#reset-search').addEventListener('click',()=>{search.value='';group.value='';renderList();search.focus();});
   tabs.forEach((tab,index)=>{tab.addEventListener('click',()=>setTab(tab.dataset.tab));tab.addEventListener('keydown',event=>{let next;if(event.key==='ArrowRight')next=(index+1)%tabs.length;if(event.key==='ArrowLeft')next=(index+tabs.length-1)%tabs.length;if(event.key==='Home')next=0;if(event.key==='End')next=tabs.length-1;if(next!==undefined){event.preventDefault();tabs[next].focus();setTab(tabs[next].dataset.tab);}});});

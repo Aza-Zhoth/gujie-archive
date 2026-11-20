@@ -51,6 +51,15 @@
     detail.append(el('p','technique-meta',[data.categories[e.kind],e.path,e.ranks.length?'品阶记载：'+e.ranks.join('、'):'',number(e.chapters)+'章出现'].filter(Boolean).join(' · ')),el('h2','',e.name));
     detail.querySelector('h2').id='technique-name';detail.setAttribute('aria-labelledby','technique-name');
     if(e.description)detail.append(el('p','technique-description',e.description));
+    const fateSection = { 'gu-9cb64e1d6222':'longgong', 'skill-94e19b720d92':'fengjiuge' }[e.id];
+    if(fateSection){
+      const links=el('nav','technique-related-links');
+      links.setAttribute('aria-label','主题导读');
+      const link=el('a','','到宿命大战里读这一段 →');
+      link.href='stories/fate-guide.html#'+fateSection;
+      links.append(link);
+      detail.append(links);
+    }
     if(e.aliases.length)detail.append(el('p','technique-aliases','原文其他写法：'+e.aliases.join('、')));
     if(e.rankEvidence?.length){const ranks=el('details','technique-rank-evidence');ranks.append(el('summary','','品阶记载依据'));for(const r of e.rankEvidence){const section=el('section','technique-reference');section.append(el('p','',r.rank+' · 第'+'一二三四五六'[r.volume-1]+'卷 · '+r.chapter),el('blockquote','',r.paragraph));ranks.append(section);}detail.append(ranks);}
     if(e.people.length){detail.append(el('h3','','关联人物'));const links=el('nav','technique-person-links');links.setAttribute('aria-label','相关人物档案');for(const id of e.people){const a=el('a','',people.get(id));a.href='index.html#'+id+'?tab=life';links.append(a);}detail.append(links);}
